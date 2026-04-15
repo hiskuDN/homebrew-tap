@@ -16,82 +16,91 @@ class Tinynudge < Formula
   def install
     prefix.install "tinynudge.app"
     libexec.install "notify.sh"
-  end
 
-  def post_install
-    install_dir = "#{Dir.home}/.tinynudge"
-    notify_sh   = "#{install_dir}/notify.sh"
+    # Generate tinynudge-setup command with the correct libexec path baked in
+    (bin/"tinynudge-setup").write <<~SH
+      #!/usr/bin/env bash
+      # Wire tinynudge hooks for detected agents (Claude Code, Cursor)
+      set -e
 
-    # Install notify.sh
-    system "mkdir", "-p", install_dir
-    system "cp", "#{libexec}/notify.sh", notify_sh
-    system "chmod", "+x", notify_sh
+      NOTIFY_SRC="#{libexec}/notify.sh"
+      INSTALL_DIR="$HOME/.tinynudge"
+      NOTIFY="$INSTALL_DIR/notify.sh"
 
-    # Wire Claude Code hooks
-    if (Pathname.new(Dir.home)/".claude").directory?
-      system "python3", "-c", <<~PY
-        import json, os
-        from pathlib import Path
+      echo "Setting up tinynudge..."
+      mkdir -p "$INSTALL_DIR"
+      cp "$NOTIFY_SRC" "$NOTIFY"
+      chmod +x "$NOTIFY"
+      echo "  Installed notify.sh -> $NOTIFY"
 
-        notify = os.path.expanduser("~/.tinynudge/notify.sh")
-        path = Path(os.path.expanduser("~/.claude/settings.json"))
-        path.parent.mkdir(parents=True, exist_ok=True)
-        settings = json.loads(path.read_text() or "{}") if path.exists() else {}
+      # Claude Code
+      if [[ -d "$HOME/.claude" ]]; then
+        python3 - "$HOME/.claude/settings.json" "$NOTIFY" <<'PY'
+      import json, os, sys
+      from pathlib import Path
 
-        hooks = settings.setdefault("hooks", {})
-        for event, arg in [("Stop", "stop"), ("PermissionRequest", "permission")]:
-            groups = hooks.setdefault(event, [])
-            cmd = f"{notify} claude-code {arg}"
-            if not any(
-                any(h.get("command") == cmd for h in g.get("hooks", []))
-                for g in groups
-            ):
-                groups.append({"matcher": "", "hooks": [{"type": "command", "command": cmd}]})
+      path = Path(sys.argv[1])
+      notify = sys.argv[2]
+      path.parent.mkdir(parents=True, exist_ok=True)
+      settings = json.loads(path.read_text() or "{}") if path.exists() else {}
 
-        path.write_text(json.dumps(settings, indent=2) + "\\n")
-        print(f"  Wired Claude Code hooks -> {path}")
+      hooks = settings.setdefault("hooks", {})
+      for event, arg in [("Stop", "stop"), ("PermissionRequest", "permission")]:
+          groups = hooks.setdefault(event, [])
+          cmd = f"{notify} claude-code {arg}"
+          if not any(
+              any(h.get("command") == cmd for h in g.get("hooks", []))
+              for g in groups
+          ):
+              groups.append({"matcher": "", "hooks": [{"type": "command", "command": cmd}]})
+
+      path.write_text(json.dumps(settings, indent=2) + "\\n")
+      print(f"  Wired Claude Code hooks -> {path}")
       PY
-    end
+      fi
 
-    # Wire Cursor hooks
-    if (Pathname.new(Dir.home)/".cursor").directory?
-      system "python3", "-c", <<~PY
-        import json, os
-        from pathlib import Path
+      # Cursor
+      if [[ -d "$HOME/.cursor" ]]; then
+        python3 - "$HOME/.cursor/hooks.json" "$NOTIFY" <<'PY'
+      import json, os, sys
+      from pathlib import Path
 
-        notify = os.path.expanduser("~/.tinynudge/notify.sh")
-        path = Path(os.path.expanduser("~/.cursor/hooks.json"))
-        path.parent.mkdir(parents=True, exist_ok=True)
-        settings = json.loads(path.read_text()) if path.exists() else {}
+      path = Path(sys.argv[1])
+      notify = sys.argv[2]
+      path.parent.mkdir(parents=True, exist_ok=True)
+      settings = json.loads(path.read_text()) if path.exists() else {}
 
-        hooks = settings.setdefault("hooks", {})
-        stop_cmd = f"{notify} cursor stop"
-        stop = hooks.setdefault("stop", [])
-        if not any(h.get("command") == stop_cmd for h in stop):
-            stop.append({"type": "command", "command": stop_cmd})
+      hooks = settings.setdefault("hooks", {})
+      stop_cmd = f"{notify} cursor stop"
+      stop = hooks.setdefault("stop", [])
+      if not any(h.get("command") == stop_cmd for h in stop):
+          stop.append({"type": "command", "command": stop_cmd})
 
-        path.write_text(json.dumps(settings, indent=2) + "\\n")
-        print(f"  Wired Cursor hooks -> {path}")
+      path.write_text(json.dumps(settings, indent=2) + "\\n")
+      print(f"  Wired Cursor hooks -> {path}")
       PY
-    end
+      fi
+
+      echo ""
+      echo "Done! Set TINYNUDGE_ACTIVATE_IMMEDIATELY=true to focus without clicking."
+    SH
+    chmod "+x", bin/"tinynudge-setup"
   end
 
   def caveats
     <<~EOS
-      tinynudge hooks have been wired for any detected agents (Claude Code, Cursor).
+      Run the setup command to wire hooks for your agents (Claude Code, Cursor):
 
-      To add support for more agents or re-run setup:
-        git clone https://github.com/hiskuDN/tinynudge.git && cd tinynudge && ./install.sh
+        tinynudge-setup
 
       Optional — focus your editor automatically on notification (no click needed):
         export TINYNUDGE_ACTIVATE_IMMEDIATELY=true
-
-      To uninstall hooks: run uninstall.sh from the repo, or brew uninstall tinynudge.
     EOS
   end
 
   test do
     assert_predicate prefix/"tinynudge.app/Contents/MacOS/tinynudge", :executable?
     assert_predicate libexec/"notify.sh", :executable?
+    assert_predicate bin/"tinynudge-setup", :executable?
   end
 end
