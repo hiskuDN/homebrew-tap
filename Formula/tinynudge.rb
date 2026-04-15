@@ -5,12 +5,12 @@ class Tinynudge < Formula
 
   on_arm do
     url "https://github.com/hiskuDN/tinynudge/releases/download/v1.1.0/tinynudge-arm64.tar.gz"
-    sha256 "64bccaeb3cec7576293209e6cc52d4dadabfcbdadbbbfc7c98c8a45834d45e16"
+    sha256 "0a25c8505c74a395370127d8898fc5d530af73bc1553e53f119f873385e57b3b"
   end
 
   on_intel do
     url "https://github.com/hiskuDN/tinynudge/releases/download/v1.1.0/tinynudge-x86_64.tar.gz"
-    sha256 "6ce6fd475a7c0fe7697c196234d87a32eff2396aa604fc6402d4ef0cd6b3bc1e"
+    sha256 "9d400e4bab1ab8b68da238143d892223bf354210932bc3061586693621eed147"
   end
 
   def install
