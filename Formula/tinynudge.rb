@@ -1,7 +1,7 @@
 class Tinynudge < Formula
   desc "Tiny notifier for AI coding agents — banners + sound with click-to-focus"
   homepage "https://github.com/hiskuDN/tinynudge"
-  version "1.1.1"
+  version "1.1.2"
 
   on_arm do
     url "https://github.com/hiskuDN/tinynudge/releases/download/v1.1.2/tinynudge-arm64.tar.gz"
