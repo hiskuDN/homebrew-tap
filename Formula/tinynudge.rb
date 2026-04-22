@@ -1,16 +1,16 @@
 class Tinynudge < Formula
   desc "Tiny notifier for AI coding agents — banners + sound with click-to-focus"
   homepage "https://github.com/hiskuDN/tinynudge"
-  version "1.1.2"
+  version "1.1.3"
 
   on_arm do
-    url "https://github.com/hiskuDN/tinynudge/releases/download/v1.1.2/tinynudge-arm64.tar.gz"
-    sha256 "19910830a876b63670b8e606c52dba4f706c5aeca9ae12809a4e66f086d5f448"
+    url "https://github.com/hiskuDN/tinynudge/releases/download/v1.1.3/tinynudge-arm64.tar.gz"
+    sha256 "446ab4d46541161a69a21098f20a246b3be7a852d2e064d206ffc0076339a1bf"
   end
 
   on_intel do
-    url "https://github.com/hiskuDN/tinynudge/releases/download/v1.1.2/tinynudge-x86_64.tar.gz"
-    sha256 "1649101b8d51b8d46675824912a0a76d3169047f950189f659c65addf5f0aee3"
+    url "https://github.com/hiskuDN/tinynudge/releases/download/v1.1.3/tinynudge-x86_64.tar.gz"
+    sha256 "356509536a062cbabfc567281ee6b50a33066d81942abfaa8fcf81c19fb3a4fa"
   end
 
   def install
